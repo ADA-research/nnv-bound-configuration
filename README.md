@@ -1,6 +1,6 @@
-****Automated Design of Linear Bounding Functions for Sigmoidal Nonlinearities in Neural Networks****
+# Automated Design of Linear Bounding Functions for Sigmoidal Nonlinearities in Neural Networks
 
-Matthias König, Xiyue Zhang, Holger Hoos, Marta Kwiatkowska, Jan van Rijn
+**Matthias König, Xiyue Zhang, Holger Hoos, Marta Kwiatkowska, Jan van Rijn**
 
 This reposetory contains the code to run alpha-beta-CROWN with automated bound configuration. The following files have been modified:
 
@@ -30,8 +30,7 @@ precompute_relaxation():
 Here, upper and lower bounds are computed here, where the function is called per activation layer.
 
 
-
-**Running alpha-beta-CROWN with automated bound configuration on the cifar_conv_small_sigmoid benchmark**
+## Running alpha-beta-CROWN with automated bound configuration on the cifar_conv_small_sigmoid benchmark**
 
 1. Clone repository
 
