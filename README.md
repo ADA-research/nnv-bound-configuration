@@ -29,6 +29,8 @@ precompute_relaxation():
 
 Here, upper and lower bounds are computed here, where the function is called per activation layer (referred to as ‘name’).
 
+
+
 **Running alpha-beta-CROWN with automated bound configuration using on the cifar_conv_small_sigmoid benchmark**
 
 1. Clone repository
