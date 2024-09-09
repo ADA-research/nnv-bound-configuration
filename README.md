@@ -2,7 +2,7 @@
 
 **Matthias König, Xiyue Zhang, Holger Hoos, Marta Kwiatkowska, Jan van Rijn**
 
-This reposetory contains the code to run alpha-beta-CROWN with automated bound configuration. The following files have been modified:
+This repository contains the code to run alpha-beta-CROWN with automated bound configuration. The following files have been modified:
 
 1. complete_verifier/abcrown.py
 
