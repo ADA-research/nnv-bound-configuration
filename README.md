@@ -1,4 +1,4 @@
-***Automated Design of Linear Bounding Functions for Sigmoidal Nonlinearities in Neural Networks***
+****Automated Design of Linear Bounding Functions for Sigmoidal Nonlinearities in Neural Networks****
 
 Matthias König, Xiyue Zhang, Holger Hoos, Marta Kwiatkowska, Jan van Rijn
 
