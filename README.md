@@ -33,7 +33,9 @@ Here, upper and lower bounds are computed here, where the function is called per
 
 1. Clone repository
 
-<git clone --recursive https://github.com/ADA-research/nnv-bound-configuration.git>
+```
+git clone --recursive https://github.com/ADA-research/nnv-bound-configuration.git
+```
 
 2. Install SMAC
 
@@ -41,5 +43,7 @@ Here, upper and lower bounds are computed here, where the function is called per
 
 3. Start configuration procedure
 
-<cd complete_verifier
-python abcrown.py --config exp_configs/beta_crown/cifar_conv_small_sigmoid.yaml>
+```
+cd complete_verifier
+python abcrown.py --config exp_configs/beta_crown/cifar_conv_small_sigmoid.yaml
+```
