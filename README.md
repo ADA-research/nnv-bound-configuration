@@ -8,7 +8,7 @@ This repository contains the code to run alpha-beta-CROWN with automated bound c
 
 The SMAC wrapper is implemented in main.py, so when calling abcrown.py, we start the configuration procedure.
 In main.py there is the target function called target_func(), which takes, among other, a configuration from SMAC as arguments.
-The configurable hyper-parameters are called hp1, hp2, hp3 and hp4, where hp3 and hp4 are conceptually similar to hp1 and hp2 but we are used for lower bound computation (vs. upper bound).
+The configurable hyper-parameters are called hp1, hp2, hp3 and hp4, where hp3 and hp4 are conceptually similar to hp1 and hp2 but used for lower bound computation (vs. upper bound).
 
 These hyper-parameters are passed into the incomplete_verifier() function.
 Within this function, the hyper-parameters are passed onto the LiRPAConvNet class.
