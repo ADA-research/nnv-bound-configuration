@@ -39,7 +39,9 @@ git clone --recursive https://github.com/ADA-research/nnv-bound-configuration.gi
 
 2. Install SMAC
 
-<pip install SMAC>
+```
+pip install SMAC
+```
 
 3. Start configuration procedure
 
