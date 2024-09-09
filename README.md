@@ -7,7 +7,7 @@ This reposetory contains the code to run alpha-beta-CROWN with automated bound c
 1. complete_verifier/abcrown.py
 
 The SMAC wrapper is implemented in main.py, so when calling abcrown.py, we start the configuration procedure.
-In main.py there is the target function called target_func(), which takes a configuration from SMAC as arguments (among others).
+In main.py there is the target function called target_func(), which takes, among other, a configuration from SMAC as arguments.
 The configurable hyper-parameters are called hp1, hp2, hp3 and hp4, where hp3 and hp4 are conceptually similar to hp1 and hp2 but we are used for lower bound computation (vs. upper bound).
 
 These hyper-parameters are passed into the incomplete_verifier() function.
@@ -27,7 +27,7 @@ In this class we call the precompute_relaxation function, which takes our hyper-
 
 precompute_relaxation():
 
-Here, upper and lower bounds are computed here, where the function is called per activation layer (referred to as ‘name’).
+Here, upper and lower bounds are computed here, where the function is called per activation layer.
 
 
 
