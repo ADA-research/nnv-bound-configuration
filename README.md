@@ -27,7 +27,7 @@ In this class we call the precompute_relaxation function, which takes our hyper-
 
 precompute_relaxation():
 
-Here, upper and lower bounds are computed here, where the function is called per activation layer.
+Here, upper and lower bounds are computed, where the function is called per activation layer.
 
 
 ## Running alpha-beta-CROWN with automated bound configuration on the cifar_conv_small_sigmoid benchmark
