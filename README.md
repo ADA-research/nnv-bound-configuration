@@ -27,11 +27,12 @@ In this work, we propose a novel parameter search method to improve the quality 
 
 ## Example
 
-First, setup the dependencies:
+First, set up the dependencies:
 
 1. Create conda environment
 2. Install needed dependencies using ```conda env create -f environment.yml```
-3. Now, you can run alpha-beta-CROWN with automated bound configuration using ```python complete_verifier/abcrown.py --config exp_configs/cifar_conv_small_tanh-1.yaml --bound_prop_method crown --no_alpha```
+
+Now, you can run alpha-beta-CROWN with automated bound configuration using ```python complete_verifier/abcrown.py --config exp_configs/cifar_conv_small_tanh-1.yaml --bound_prop_method crown --no_alpha```
 
 This example configures the linear bounds for Tanh-based ConvMed network with epsilon=0.0157 on the first CIFAR-10 instance. During configuration, SMAC performs 200 trials.
 
