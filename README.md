@@ -1,4 +1,4 @@
-#Automated Design of Linear Bounding Functions for Sigmoidal Nonlinearities in Neural Networks
+# Automated Design of Linear Bounding Functions for Sigmoidal Nonlinearities in Neural Networks
 
 This is the accompanying repository to the paper:
 
@@ -25,7 +25,7 @@ In this work, we propose a novel parameter search method to improve the quality 
 }
 ```
 
-##Example
+## Example
 
 First, setup the dependencies:
 
