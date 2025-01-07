@@ -35,4 +35,4 @@ First, setup the dependencies:
 
 This example configures the linear bounds for Tanh-based ConvMed network with epsilon=0.0157 on the first CIFAR-10 instance. During configuration, SMAC performs 200 trials.
 
-To change the network and/or instance, you need to change the config file and/or the instance index in ```arguments.py```.
+To change the network, dataset, epsilon value and/or instance, you need to change the config file and/or the instance index in ```arguments.py```.
