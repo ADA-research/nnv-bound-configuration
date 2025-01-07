@@ -1,13 +1,11 @@
 general:
-  root_path: ../../vnncomp2021/benchmarks/eran  # Please update this path to point to the VNN-COMP 2021 repo
-  csv_name: eran_instances.csv
+  root_path: /home/koenig/alpha-beta-CROWN
+  csv_name: mnist_instances__eran_mlp.csv
   complete_verifier: bab-refine
 model:
   onnx_optimization_flags: remove_ineffective_layers, remove_relu_in_last_layer
 data:
   dataset: MNIST
-  start: 0
-  end: 36
 solver:
   batch_size: 500
   beta-crown:

@@ -41,22 +41,38 @@ from batch_branch_and_bound_input_split import input_bab_parallel
 from read_vnnlib import batch_vnnlib, read_vnnlib
 from cut_utils import terminate_mip_processes, terminate_mip_processes_by_c_matching
 
+from ConfigSpace import Configuration, ConfigurationSpace
+from smac import HyperparameterOptimizationFacade as HPOFacade
+from smac import Scenario
+from ConfigSpace import (
+    Categorical,
+    Configuration,
+    ConfigurationSpace,
+    EqualsCondition,
+    Float,
+    InCondition,
+    Integer,
+)
 
-def incomplete_verifier(model_ori, data, data_ub=None, data_lb=None, vnnlib=None):
+
+def incomplete_verifier(model_ori, data, data_ub=None, data_lb=None, vnnlib=None,
+                        alphas_0=1., alphas_1=1., alphas_2=1., alphas_3=1., alphas_4=1., alphas_5=-1., alphas_6=1., alphas_7=1.,
+                        alphas_8=1., alphas_9=1., alphas_10=1., alphas_11=1., alphas_12=1., alphas_13=1., alphas_14=1., alphas_15=1.,
+                        alphas_16=1., alphas_17=1., alphas_18=1., alphas_19=1., alphas_20=1., alphas_21=1., hp1=1., hp2=1., hp3=2., hp4=2.):
     norm = arguments.Config["specification"]["norm"]
     # Generally, c should be constructed from vnnlib
     assert len(vnnlib) == 1
     vnnlib = vnnlib[0]
-    c = torch.tensor(np.array([item[0] for item in vnnlib[1]])).to(data)
+    c = torch.tensor(np.array([item[0] for item in vnnlib[1]])).cpu().to(data)
     c_transposed = False
     if c.shape[0] != 1 and data.shape[0] == 1:
         # TODO need a more general solution.
         # transpose c to share intermediate bounds
         c = c.transpose(0, 1)
         c_transposed = True
-    arguments.Config["bab"]["decision_thresh"] = torch.tensor(np.array([item[1] for item in vnnlib[1]])).to(data)
+    arguments.Config["bab"]["decision_thresh"] = torch.tensor(np.array([item[1] for item in vnnlib[1]])).cpu().to(data)
 
-    model = LiRPAConvNet(model_ori, in_size=data.shape, c=c)
+    model = LiRPAConvNet(model_ori, in_size=data.shape, c=c, hp1=hp1, hp2=hp2, hp3=hp3, hp4=hp4)
     print('Model prediction is:', model.net(data))
     if list(model.net.parameters())[0].is_cuda:
         data = data.cuda()
@@ -69,11 +85,16 @@ def incomplete_verifier(model_ori, data, data_ub=None, data_lb=None, vnnlib=None
     bound_prop_method = arguments.Config["solver"]["bound_prop_method"]
 
     _, global_lb, _, _, _, mask, lA, lower_bounds, upper_bounds, pre_relu_indices, slope, history, attack_images = model.build_the_model(
-            domain, x, data_lb, data_ub, vnnlib, stop_criterion_func=stop_criterion_min(arguments.Config["bab"]["decision_thresh"]))
+            domain, x, data_lb, data_ub, vnnlib, stop_criterion_func=stop_criterion_min(arguments.Config["bab"]["decision_thresh"]),
+            alphas_0=alphas_0, alphas_1=alphas_1, alphas_2=alphas_2, alphas_3=alphas_3, alphas_4=alphas_4, alphas_5=alphas_5, alphas_6=alphas_6, 
+            alphas_7=alphas_7, alphas_8=alphas_8, alphas_9=alphas_9, alphas_10=alphas_10, alphas_11=alphas_11, alphas_12=alphas_12, alphas_13=alphas_13, 
+            alphas_14=alphas_14, alphas_15=alphas_15, alphas_16=alphas_16, alphas_17=alphas_17, alphas_18=alphas_18, alphas_19=alphas_19, alphas_20=alphas_20, 
+            alphas_21=alphas_21)
 
     if (global_lb > arguments.Config["bab"]["decision_thresh"]).all():
         print("verified with init bound!")
-        return "safe-incomplete", None, None, None, None
+        # print(global_lb.cpu().numpy().min())
+        return "safe-incomplete", global_lb, None, None, None
 
     if arguments.Config["attack"]["pgd_order"] == "middle":
         if attack_images is not None:
@@ -421,6 +442,43 @@ def complete_verifier(
 
 
 def main():
+
+    cs = ConfigurationSpace({
+        # "alphas_0": (-1., 1.),
+        # "alphas_1": (-1., 1.),
+        # "alphas_2": (-1., 1.),
+        # "alphas_3": (-1., 1.),
+        # "alphas_4": (-1., 1.),
+        # "alphas_5": (-1., 1.),
+        # "alphas_6": (-1., 1.),
+        # "alphas_7": (-1., 1.),
+        # "alphas_8": (-1., 1.),
+        # "alphas_9": (-1., 1.),
+        # "alphas_10": (-1., 1.),
+        # "alphas_11": (-1., 1.),
+        # "alphas_12": (-1., 1.),
+        # "alphas_13": (-1., 1.),
+        # "alphas_14": (-1., 1.),
+        # "alphas_15": (-1., 1.),
+        # "alphas_16": (-1., 1.),
+        # "alphas_17": (-1., 1.),
+        # "alphas_18": (-1., 1.),
+        # "alphas_19": (-1., 1.),
+        # "alphas_20": (-1., 1.),
+        # "alphas_21": (-1., 1.)
+        "hp1": (0.01, 2.),
+        "hp2": (0.01, 2.),
+        "hp3": (1.01, 3.),
+        "hp4": (1.01, 3.),
+    })
+
+    scenario = Scenario(
+        configspace=cs,
+        deterministic=True,  # Only one seed
+        n_trials=200,
+        # objectives=["lb", "ub"]
+    )
+
     print(f'Experiments at {time.ctime()} on {socket.gethostname()}')
     torch.manual_seed(arguments.Config["general"]["seed"])
     random.seed(arguments.Config["general"]["seed"])
@@ -455,16 +513,8 @@ def main():
     cnt = 0  # Number of examples in this run.
     select_instance = arguments.Config["data"]["select_instance"]
 
-    for new_idx, csv_item in enumerate(example_idx_list):
-        arguments.Globals["example_idx"] = new_idx
-        vnnlib_id = new_idx + arguments.Config["data"]["start"]
-
-        # Select some instances to verify
-        if select_instance and not vnnlib_id in select_instance:
-            continue
-
-        start_time = time.time()
-        print(f'\n %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% idx: {new_idx}, vnnlib ID: {vnnlib_id} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
+    def target_func(cfg, run_mode=run_mode, save_path=save_path, file_root=file_root, model_ori=model_ori, 
+        vnnlib_all=vnnlib_all, shape=shape, cnt=cnt, seed: int = 0):  
 
         if run_mode != 'customized_data':
             if len(csv_item) == 3:
@@ -500,149 +550,196 @@ def main():
             verified_status = res = nn4sys_verification(model_ori, vnnlib, onnx_path=os.path.join(file_root, onnx_path))
             print(res)
         else:
-            model_ori.eval()
-            vnnlib_shape = shape
+            try:
 
-            # FIXME attack and initial_incomplete_verification only works for assert len(vnnlib) == 1
-            x_range = torch.tensor(vnnlib[0][0], dtype=torch.get_default_dtype())
-            data_min = x_range.select(-1, 0).reshape(vnnlib_shape)
-            data_max = x_range.select(-1, 1).reshape(vnnlib_shape)
-            x = x_range.mean(-1).reshape(vnnlib_shape)  # only the shape of x is important.
+                model_ori.eval()
+                vnnlib_shape = shape
 
-            # auto tune args
-            update_parameters(model_ori, data_min, data_max)
+                # FIXME attack and initial_incomplete_verification only works for assert len(vnnlib) == 1
+                x_range = torch.tensor(vnnlib[0][0], dtype=torch.get_default_dtype())
+                data_min = x_range.select(-1, 0).reshape(vnnlib_shape)
+                data_max = x_range.select(-1, 1).reshape(vnnlib_shape)
+                x = x_range.mean(-1).reshape(vnnlib_shape)  # only the shape of x is important.
 
-            model_ori = model_ori.to(device)
-            x, data_max, data_min = x.to(device), data_max.to(device), data_min.to(device)
+                # auto tune args
+                update_parameters(model_ori, data_min, data_max)
 
-            verified_status = "unknown"
-            verified_success = False                
+                model_ori = model_ori.to(device)
+                x, data_max, data_min = x.to(device), data_max.to(device), data_min.to(device)
 
-            if arguments.Config["attack"]["pgd_order"] == "before":
-                verified_status, verified_success, attack_images, attack_margins, all_adv_candidates = attack(
-                    model_ori, x, data_min, data_max, vnnlib,
-                    verified_status, verified_success)
+                verified_status = "unknown"
+                verified_success = False                
+
+                if arguments.Config["attack"]["pgd_order"] == "before":
+                    verified_status, verified_success, attack_images, attack_margins, all_adv_candidates = attack(
+                        model_ori, x, data_min, data_max, vnnlib,
+                        verified_status, verified_success)
+                else:
+                    attack_images = attack_margins = all_adv_candidates = None
+
+                init_global_lb = saved_bounds = saved_slopes = y = lower_bounds = upper_bounds = None
+                activation_opt_params = model_incomplete = lA = cplex_processes = None
+
+                # Incomplete verification is enabled by default. The intermediate lower
+                # and upper bounds will be reused in bab and mip.
+                if (not verified_success and (
+                        arguments.Config["general"]["enable_incomplete_verification"]
+                        or arguments.Config["general"]["complete_verifier"] == "bab-refine")):
+                    assert len(vnnlib) == 1
+                    # verified_status, init_global_lb, saved_bounds, saved_slopes, activation_opt_params = \
+                    #     incomplete_verifier(model_ori, x, data_ub=data_max, data_lb=data_min, vnnlib=vnnlib, alphas_0=cfg['alphas_0'], alphas_1=cfg['alphas_1'], alphas_2=cfg['alphas_2'], 
+                    #                         alphas_3=cfg['alphas_3'], alphas_4=cfg['alphas_4'], alphas_5=cfg['alphas_5'], alphas_6=cfg['alphas_6'], alphas_7=cfg['alphas_7'], alphas_8=cfg['alphas_8'], 
+                    #                         alphas_9=cfg['alphas_9'], alphas_10=cfg['alphas_10'], alphas_11=cfg['alphas_11'], alphas_12=cfg['alphas_12'], alphas_13=cfg['alphas_13'], 
+                    #                         alphas_14=cfg['alphas_14'], alphas_15=cfg['alphas_15'], alphas_16=cfg['alphas_16'], alphas_17=cfg['alphas_17'], 
+                    #                         alphas_18=cfg['alphas_18'], alphas_19=cfg['alphas_19'], alphas_20=cfg['alphas_20'], alphas_21=cfg['alphas_21'])
+                    verified_status, init_global_lb, saved_bounds, saved_slopes, activation_opt_params = \
+                        incomplete_verifier(model_ori, x, data_ub=data_max, data_lb=data_min, vnnlib=vnnlib, hp1=cfg['hp1'], hp2=cfg['hp2'], hp3=cfg['hp3'], hp4=cfg['hp4'])
+                    verified_success = verified_status != "unknown"
+                    if not verified_success:
+                        model_incomplete, lower_bounds, upper_bounds = saved_bounds[:3]
+                        lA = saved_bounds[-1]
+
+                if not verified_success and arguments.Config["attack"]["pgd_order"] == "after":
+                    verified_status, verified_success, attack_images, attack_margins, all_adv_candidates = attack(
+                        model_ori, x, data_min, data_max, vnnlib,
+                        verified_status, verified_success)
+
+                # MIP or MIP refined bounds.
+                refined_betas = None
+                if not verified_success and (arguments.Config["general"]["complete_verifier"] == "mip" or arguments.Config["general"]["complete_verifier"] == "bab-refine"):
+                    # rhs = ? NEED TO SAVE TO LIRPA_MODULE
+                    verified_status, init_global_lb, lower_bounds, upper_bounds, refined_betas = mip(saved_bounds=saved_bounds)
+                    verified_success = verified_status != "unknown"
+
+                # extract the process pool for cut inquiry
+                if arguments.Config["bab"]["cut"]["enabled"] and arguments.Config["bab"]["cut"]["cplex_cuts"]:
+                    if saved_bounds is not None:
+                        # use nullity of saved_bounds as an indicator of whether cut processes are launched
+                        # saved_bounds[0] is the AutoLiRPA model instance
+                        cplex_processes = saved_bounds[0].processes
+                        mip_building_proc = saved_bounds[0].mip_building_proc
+
+                # BaB bounds. (not do bab if unknown by mip solver for now)
+                if not verified_success and arguments.Config["general"]["complete_verifier"] != "skip" and verified_status != "unknown-mip":
+                    batched_vnnlib = batch_vnnlib(vnnlib)
+                    verified_status = complete_verifier(
+                        model_ori, model_incomplete, batched_vnnlib, vnnlib, vnnlib_shape,
+                        init_global_lb, lower_bounds, upper_bounds, new_idx,
+                        timeout_threshold=timeout_threshold - (time.time() - start_time),
+                        bab_ret=bab_ret, lA=lA, cplex_processes=cplex_processes,
+                        reference_slopes=saved_slopes, activation_opt_params=activation_opt_params,
+                        refined_betas=refined_betas, attack_images=all_adv_candidates, attack_margins=attack_margins)
+
+                if arguments.Config["bab"]["cut"]["enabled"] and arguments.Config["bab"]["cut"]["cplex_cuts"] and saved_bounds is not None:
+                    terminate_mip_processes(mip_building_proc, cplex_processes)
+                    del cplex_processes
+
+                print('Cost:', init_global_lb.min().item())
+                cost = -init_global_lb.min().item()
+
+                del init_global_lb, saved_bounds, saved_slopes
+
+            except Exception as e:
+
+                verified_status = "error"
+                verified_success = False 
+                print(e)  
+
+            # Summarize results.
+            if run_mode == 'single_vnnlib':
+                # run in run_instance.sh
+                if 'unknown' in verified_status or 'timeout' in verified_status or 'timed out' in verified_status:
+                    verified_status = 'timeout'
+                elif 'unsafe' in verified_status:
+                    verified_status = 'sat'
+                elif 'safe' in verified_status:
+                    verified_status = 'unsat'
+                else:
+                    raise ValueError(f'Unknown verified_status {verified_status}')
+
+                print('Result:', verified_status)
+                print('Time:', time.time() - start_time)
+                with open(save_path, "w") as file:
+                    file.write(verified_status)
+                    if arguments.Config["general"]["save_adv_example"]:
+                        if verified_status == 'sat':
+                            file.write('\n')
+                            with open(arguments.Config["attack"]["cex_path"], "r") as adv_example:
+                                file.write(adv_example.read())
+                    file.flush()
             else:
-                attack_images = attack_margins = all_adv_candidates = None
+                cnt += 1
+                if time.time() - start_time > timeout_threshold:
+                    if 'unknown' not in verified_status:
+                        verified_status += ' (timed out)'
+                verification_summary[verified_status].append(new_idx)
+                status_per_sample_list.append([verified_status, time.time() - start_time])  # [status, time]
+                with open(save_path, "wb") as f:
+                    pickle.dump({"summary": verification_summary, "results": status_per_sample_list,  "bab_ret": bab_ret}, f)
+                print(f"Result: {verified_status} in {status_per_sample_list[-1][1]:.4f} seconds")
 
-            init_global_lb = saved_bounds = saved_slopes = y = lower_bounds = upper_bounds = None
-            activation_opt_params = model_incomplete = lA = cplex_processes = None
+        if run_mode != 'single_vnnlib':
+            # Finished all examples.
+            time_timeout = [s[1] for s in status_per_sample_list if "unknown" in s[0]]
+            time_verified = [s[1] for s in status_per_sample_list if "safe" in s[0] and "unsafe" not in s[0]]
+            time_unsafe = [s[1] for s in status_per_sample_list if "unsafe" in s[0]]
+            time_all_instances = [s[1] for s in status_per_sample_list]
 
-            # Incomplete verification is enabled by default. The intermediate lower
-            # and upper bounds will be reused in bab and mip.
-            if (not verified_success and (
-                    arguments.Config["general"]["enable_incomplete_verification"]
-                    or arguments.Config["general"]["complete_verifier"] == "bab-refine")):
-                assert len(vnnlib) == 1
-                verified_status, init_global_lb, saved_bounds, saved_slopes, activation_opt_params = \
-                    incomplete_verifier(model_ori, x, data_ub=data_max, data_lb=data_min, vnnlib=vnnlib)
-                verified_success = verified_status != "unknown"
-                if not verified_success:
-                    model_incomplete, lower_bounds, upper_bounds = saved_bounds[:3]
-                    lA = saved_bounds[-1]
-
-            if not verified_success and arguments.Config["attack"]["pgd_order"] == "after":
-                verified_status, verified_success, attack_images, attack_margins, all_adv_candidates = attack(
-                    model_ori, x, data_min, data_max, vnnlib,
-                    verified_status, verified_success)
-
-            # MIP or MIP refined bounds.
-            refined_betas = None
-            if not verified_success and (arguments.Config["general"]["complete_verifier"] == "mip" or arguments.Config["general"]["complete_verifier"] == "bab-refine"):
-                # rhs = ? NEED TO SAVE TO LIRPA_MODULE
-                verified_status, init_global_lb, lower_bounds, upper_bounds, refined_betas = mip(saved_bounds=saved_bounds)
-                verified_success = verified_status != "unknown"
-
-            # extract the process pool for cut inquiry
-            if arguments.Config["bab"]["cut"]["enabled"] and arguments.Config["bab"]["cut"]["cplex_cuts"]:
-                if saved_bounds is not None:
-                    # use nullity of saved_bounds as an indicator of whether cut processes are launched
-                    # saved_bounds[0] is the AutoLiRPA model instance
-                    cplex_processes = saved_bounds[0].processes
-                    mip_building_proc = saved_bounds[0].mip_building_proc
-
-            # BaB bounds. (not do bab if unknown by mip solver for now)
-            if not verified_success and arguments.Config["general"]["complete_verifier"] != "skip" and verified_status != "unknown-mip":
-                batched_vnnlib = batch_vnnlib(vnnlib)
-                verified_status = complete_verifier(
-                    model_ori, model_incomplete, batched_vnnlib, vnnlib, vnnlib_shape,
-                    init_global_lb, lower_bounds, upper_bounds, new_idx,
-                    timeout_threshold=timeout_threshold - (time.time() - start_time),
-                    bab_ret=bab_ret, lA=lA, cplex_processes=cplex_processes,
-                    reference_slopes=saved_slopes, activation_opt_params=activation_opt_params,
-                    refined_betas=refined_betas, attack_images=all_adv_candidates, attack_margins=attack_margins)
-
-            if arguments.Config["bab"]["cut"]["enabled"] and arguments.Config["bab"]["cut"]["cplex_cuts"] and saved_bounds is not None:
-                terminate_mip_processes(mip_building_proc, cplex_processes)
-                del cplex_processes
-
-            del init_global_lb, saved_bounds, saved_slopes
-
-        # Summarize results.
-        if run_mode == 'single_vnnlib':
-            # run in run_instance.sh
-            if 'unknown' in verified_status or 'timeout' in verified_status or 'timed out' in verified_status:
-                verified_status = 'timeout'
-            elif 'unsafe' in verified_status:
-                verified_status = 'sat'
-            elif 'safe' in verified_status:
-                verified_status = 'unsat'
-            else:
-                raise ValueError(f'Unknown verified_status {verified_status}')
-
-            print('Result:', verified_status)
-            print('Time:', time.time() - start_time)
-            with open(save_path, "w") as file:
-                file.write(verified_status)
-                if arguments.Config["general"]["save_adv_example"]:
-                    if verified_status == 'sat':
-                        file.write('\n')
-                        with open(arguments.Config["attack"]["cex_path"], "r") as adv_example:
-                            file.write(adv_example.read())
-                file.flush()
-        else:
-            cnt += 1
-            if time.time() - start_time > timeout_threshold:
-                if 'unknown' not in verified_status:
-                    verified_status += ' (timed out)'
-            verification_summary[verified_status].append(new_idx)
-            status_per_sample_list.append([verified_status, time.time() - start_time])  # [status, time]
             with open(save_path, "wb") as f:
-                pickle.dump({"summary": verification_summary, "results": status_per_sample_list,  "bab_ret": bab_ret}, f)
-            print(f"Result: {verified_status} in {status_per_sample_list[-1][1]:.4f} seconds")
+                pickle.dump({"summary": verification_summary, "results": status_per_sample_list, "bab_ret": bab_ret}, f)
 
-    if run_mode != 'single_vnnlib':
-        # Finished all examples.
-        time_timeout = [s[1] for s in status_per_sample_list if "unknown" in s[0]]
-        time_verified = [s[1] for s in status_per_sample_list if "safe" in s[0] and "unsafe" not in s[0]]
-        time_unsafe = [s[1] for s in status_per_sample_list if "unsafe" in s[0]]
-        time_all_instances = [s[1] for s in status_per_sample_list]
+            print("############# Summary #############")
+            print("Final verified acc: {}% (total {} examples)".format(len(time_verified) / len(example_idx_list) * 100., len(example_idx_list)))
+            print("Problem instances count:", len(time_verified) + len(time_unsafe) + len(time_timeout), ", total verified (safe/unsat):", len(time_verified),
+                  ", total falsified (unsafe/sat):", len(time_unsafe), ", timeout:", len(time_timeout))
+            print(f"mean time for ALL instances (total {len(time_all_instances)}): {sum(time_all_instances)/(len(time_all_instances) + 1e-5)}, max time: {max(time_all_instances)}")
+            if len(time_verified) > 0:
+                print(f"mean time for verified SAFE instances (total {len(time_verified)}): "
+                      f"{sum(time_verified) / len(time_verified)}, max time: {max(time_verified)}")
+            if len(time_verified) > 0 and len(time_unsafe) > 0:
+                print(f"mean time for verified (SAFE + UNSAFE) instances (total {(len(time_verified) + len(time_unsafe))}):"
+                      f" {(sum(time_verified) + sum(time_unsafe)) / (len(time_verified) + len(time_unsafe))}, max time: "
+                      f"{max(max(time_verified), max(time_unsafe))}")
+            if len(time_verified) > 0 and len(time_timeout) > 0:
+                print(f"mean time for verified SAFE + TIMEOUT instances (total {(len(time_verified) + len(time_timeout))}):"
+                      f" {(sum(time_verified) + sum(time_timeout)) / (len(time_verified) + len(time_timeout))}, max time: "
+                      f"{max(max(time_verified), max(time_timeout))}")
+            if len(time_unsafe) > 0:
+                print(f"mean time for verified UNSAFE instances (total {len(time_unsafe)}): "
+                      f"{sum(time_unsafe) / len(time_unsafe)}, max time: {max(time_unsafe)}")
 
-        with open(save_path, "wb") as f:
-            pickle.dump({"summary": verification_summary, "results": status_per_sample_list, "bab_ret": bab_ret}, f)
+            for k, v in verification_summary.items():
+                print(f"{k} (total {len(v)}), index:", v)
 
-        print("############# Summary #############")
-        print("Final verified acc: {}% (total {} examples)".format(len(time_verified) / len(example_idx_list) * 100., len(example_idx_list)))
-        print("Problem instances count:", len(time_verified) + len(time_unsafe) + len(time_timeout), ", total verified (safe/unsat):", len(time_verified),
-              ", total falsified (unsafe/sat):", len(time_unsafe), ", timeout:", len(time_timeout))
-        print(f"mean time for ALL instances (total {len(time_all_instances)}): {sum(time_all_instances)/(len(time_all_instances) + 1e-5)}, max time: {max(time_all_instances)}")
-        if len(time_verified) > 0:
-            print(f"mean time for verified SAFE instances (total {len(time_verified)}): "
-                  f"{sum(time_verified) / len(time_verified)}, max time: {max(time_verified)}")
-        if len(time_verified) > 0 and len(time_unsafe) > 0:
-            print(f"mean time for verified (SAFE + UNSAFE) instances (total {(len(time_verified) + len(time_unsafe))}):"
-                  f" {(sum(time_verified) + sum(time_unsafe)) / (len(time_verified) + len(time_unsafe))}, max time: "
-                  f"{max(max(time_verified), max(time_unsafe))}")
-        if len(time_verified) > 0 and len(time_timeout) > 0:
-            print(f"mean time for verified SAFE + TIMEOUT instances (total {(len(time_verified) + len(time_timeout))}):"
-                  f" {(sum(time_verified) + sum(time_timeout)) / (len(time_verified) + len(time_timeout))}, max time: "
-                  f"{max(max(time_verified), max(time_timeout))}")
-        if len(time_unsafe) > 0:
-            print(f"mean time for verified UNSAFE instances (total {len(time_unsafe)}): "
-                  f"{sum(time_unsafe) / len(time_unsafe)}, max time: {max(time_unsafe)}")
+        return cost
 
-        for k, v in verification_summary.items():
-            print(f"{k} (total {len(v)}), index:", v)
+
+    smac = HPOFacade(
+        scenario=scenario,
+        target_function=target_func,
+        # multi_objective_algorithm=HPOFacade.get_multi_objective_algorithm(
+        #     scenario,
+        #     # objective_weights=[2, 1]
+        # ),
+        overwrite=True
+    )
+
+
+    for new_idx, csv_item in enumerate(example_idx_list):
+        arguments.Globals["example_idx"] = new_idx
+        vnnlib_id = new_idx + arguments.Config["data"]["start"]
+
+        # Select some instances to verify
+        if select_instance and not vnnlib_id in select_instance:
+            continue
+
+        start_time = time.time()
+        print(f'\n %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% idx: {new_idx}, vnnlib ID: {vnnlib_id} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
+
+
+        incumbent = smac.optimize()
+        cost = smac.validate(incumbent)
+        print('Cost after HPO:', cost)
 
 
 if __name__ == "__main__":

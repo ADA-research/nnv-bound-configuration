@@ -1,16 +1,13 @@
 # Configuration file for running the mnist_fc benchmark (large models).
 general:
-  root_path: ../../vnncomp2022_benchmarks/benchmarks/mnist_fc
-  csv_name: instances.csv
-  complete_verifier: bab-refine
+  root_path: /home/koenig/alpha-beta-CROWN
+  csv_name: mnist_instances__mnistfc.csv
 model:
   input_shape: [-1, 1, 28, 28]  # This onnx model has input shape [-1, 784] which is not compatible with our MIP solution
 data:
   dataset: MNIST
-  start: 30
-  end: 90
 solver:
-  batch_size: 4096
+  batch_size: 2048
   beta-crown:
     iteration: 20
     lr_beta: 0.03

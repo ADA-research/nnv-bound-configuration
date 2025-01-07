@@ -133,7 +133,7 @@ class ConfigHandler:
         h = ["data"]
         self.add_argument("--start", type=int, default=0, help='Start from the i-th property in specified dataset.',
                           hierarchy=h + ["start"])
-        self.add_argument("--end", type=int, default=10000, help='End with the (i-1)-th property in the dataset.',
+        self.add_argument("--end", type=int, default=1, help='End with the (i-1)-th property in the dataset.',
                           hierarchy=h + ["end"])
         self.add_argument("--select_instance", type=int, nargs='+', default=None,
                           help='Select a list of instances to verify.', hierarchy=h + ["select_instance"])
@@ -455,7 +455,7 @@ class ConfigHandler:
                           hierarchy=h + ["refined_batch_size"])
 
         h = ["attack"]
-        self.add_argument('--pgd_order', choices=["before", "after", "middle", "skip"], default="before",
+        self.add_argument('--pgd_order', choices=["before", "after", "middle", "skip"], default="skip",
                           help='Run PGD attack before/after incomplete verification, or skip it.', hierarchy=h + ["pgd_order"])
         self.add_argument('--pgd_steps', type=int, default=100, help="Steps of PGD attack.",
                           hierarchy=h + ["pgd_steps"])
@@ -643,8 +643,8 @@ class ConfigHandler:
         if self["solver"]["multi_class"]["multi_class_method"] != "allclass_domain":
             raise RuntimeError('--multi_class_method is deprecated')
         # Print all configuration.
-        print('Configurations:\n')
-        print(self.dump_config(self.all_args))
+        # print('Configurations:\n')
+        # print(self.dump_config(self.all_args))
         return parsed_args
 
     def keys(self):

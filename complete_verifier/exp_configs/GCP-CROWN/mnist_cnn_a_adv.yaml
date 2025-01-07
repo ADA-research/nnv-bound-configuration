@@ -1,19 +1,19 @@
-model:
-  name: mnist_cnn_4layer
-  path: models/sdp/mnist_cnn_a_adv.model
+general:
+  root_path: /home/koenig/alpha-beta-CROWN
+  csv_name: mnist_instances__mnist_cnn_a_adv.csv
 data:
+  start: 25125
+  end: 50000
   dataset: MNIST_SDP
-specification:
-  epsilon: 0.3
 attack:
   pgd_restarts: 50
 solver:
-  batch_size: 4096 # 1024
+  batch_size: 512 # 1024
   beta-crown:
     iteration: 20 # 20
     lr_beta: 0.005 # 0.05
 bab:
-  timeout: 200 # 180
+  timeout: 3600 # 180
   branching:
     reduceop: max
   cut:

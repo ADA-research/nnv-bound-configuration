@@ -6,7 +6,7 @@ from .base import *
 from .clampmult import multiply_by_A_signs
 from .solver_utils import grb
 from ..utils import unravel_index, logger, prod
-
+import random
 
 torch._C._jit_set_profiling_executor(False)
 torch._C._jit_set_profiling_mode(False)
@@ -963,7 +963,7 @@ class BoundLeakyRelu(BoundActivation):
 class BoundTanh(BoundOptimizableActivation):
     def __init__(self, attr, inputs, output_index, options):
         super().__init__(attr, inputs, output_index, options)
-        self.precompute_relaxation('tanh', torch.tanh, self.dtanh)
+        self.precompute_relaxation('tanh', torch.tanh, self.dtanh, hp1=options['hp1'], hp2=options['hp2'], hp3=options['hp3'], hp4=options['hp4'])
         # Alpha dimension is (4, 2, output_shape, batch, *shape) for Tanh.
         self.alpha_batch_dim = 3
 
@@ -991,16 +991,22 @@ class BoundTanh(BoundOptimizableActivation):
         return mask * (1. / cosh.pow(2))
 
     @torch.no_grad()
-    def precompute_relaxation(self, name, func, dfunc, x_limit = 500):
+    def precompute_relaxation(self, name, func, dfunc, x_limit = 500, hp1=1., hp2=1., hp3=2., hp4=2.):
         """
         This function precomputes the tangent lines that will be used as lower/upper bounds for S-shapes functions.
         """
         self.x_limit = x_limit
         self.step_pre = 0.01
         self.num_points_pre = int(self.x_limit / self.step_pre)
+        self.hp1 = hp1
+        self.hp2 = hp2
+        self.hp3 = hp3
+        self.hp4 = hp4
         max_iter = 100
 
-        logger.debug('Precomputing relaxation for {}'.format(name))
+        print('params:', hp1, hp2, hp3, hp4)
+
+        print('Precomputing relaxation for {}'.format(name))
 
         def check_lower(upper, d):
             """Given two points upper, d (d <= upper), check if the slope at d will be less than f(upper) at upper."""
@@ -1018,22 +1024,25 @@ class BoundTanh(BoundOptimizableActivation):
         upper = self.step_pre * torch.arange(0, self.num_points_pre + 5, device=self.device)
         r = torch.zeros_like(upper)
         # Initial guess, the tangent line is at -1.
-        l = -torch.ones_like(upper)
+        l = hp1 * -torch.ones_like(upper) # CHANGED
+        print('initial l', l)
         while True:
             # Check if the tangent line at the guessed point is an lower bound at f(upper).
             checked = check_lower(upper, l).int()
             # If the initial guess is not smaller enough, then double it (-2, -4, etc).
-            l = checked * l + (1 - checked) * (l * 2)
+            l = checked * l + (1 - checked) * (l * hp3) # CHANGED
             if checked.sum() == l.numel():
                 break
         # Now we have starting point at l, its tangent line is guaranteed to be an lower bound at f(upper).
         # We want to further tighten this bound by moving it closer to 0.
-        for t in range(max_iter):
-            # Binary search.
-            m = (l + r) / 2
-            checked = check_lower(upper, m).int()
-            l = checked * m + (1 - checked) * l
-            r = checked * r + (1 - checked) * m
+        # for t in range(max_iter):
+        #     # Binary search.
+        #     m = (l + r) / 2
+        #     # print('binary search lower', m)
+        #     checked = check_lower(upper, m).int()
+        #     l = checked * m + (1 - checked) * l
+        #     r = checked * r + (1 - checked) * m
+        print('final l', l)
         # At upper, a line with slope l is guaranteed to lower bound the function.
         self.d_lower = l.clone()
 
@@ -1041,20 +1050,22 @@ class BoundTanh(BoundOptimizableActivation):
         # Given an lower bound point (<=0), find a line that is guaranteed to be an upper bound of this function.
         lower = -self.step_pre * torch.arange(0, self.num_points_pre + 5, device=self.device)
         l = torch.zeros_like(upper)
-        r = torch.ones_like(upper)
+        r = hp2 * torch.ones_like(upper) # CHANGED
+        print('initial r', l)
         while True:
             checked = check_upper(lower, r).int()
-            r = checked * r + (1 - checked) * (r * 2)
+            # print('checked upper', checked)
+            r = checked * r + (1 - checked) * (r * hp4) # CHANGED
             if checked.sum() == l.numel():
                 break
-        for t in range(max_iter):
-            m = (l + r) / 2
-            checked = check_upper(lower, m).int()
-            l = (1 - checked) * m + checked * l
-            r = (1 - checked) * r + checked * m
+        # for t in range(max_iter):
+        #     m = (l + r) / 2
+        #     # print('binary search upper', m)
+        #     checked = check_upper(lower, m).int()
+        #     l = (1 - checked) * m + checked * l
+        #     r = (1 - checked) * r + checked * m
         self.d_upper = r.clone()
-
-        logger.debug('Done')
+        print('Done')
 
     def forward(self, x):
         return torch.tanh(x)
@@ -1192,7 +1203,7 @@ class BoundTanh(BoundOptimizableActivation):
 class BoundSigmoid(BoundTanh):
     def __init__(self, attr, inputs, output_index, options):
         super(BoundTanh, self).__init__(attr, inputs, output_index, options)
-        self.precompute_relaxation('sigmoid', torch.sigmoid, self.dsigmoid)
+        self.precompute_relaxation('sigmoid', torch.sigmoid, self.dsigmoid, hp1=options['hp1'], hp2=options['hp2'], hp3=options['hp3'], hp4=options['hp4'])
         # Alpha dimension is  (4, 2, output_shape, batch, *shape) for S-shaped functions.
         self.alpha_batch_dim = 3
 

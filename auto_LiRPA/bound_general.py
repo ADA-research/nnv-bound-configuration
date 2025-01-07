@@ -72,7 +72,7 @@ class BoundedModule(nn.Module):
             # Threshold for number of unstable neurons for each layer to disable
             #  use_full_conv_alpha.
             'use_full_conv_alpha_thresh': 512,
-            'verbosity': 1 if verbose else 0,
+            'verbosity': 1 if verbose else 0
         }
         default_bound_opts.update(bound_opts)
         self.bound_opts = default_bound_opts

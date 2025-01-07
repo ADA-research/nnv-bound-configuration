@@ -21,6 +21,12 @@ def _set_alpha(optimizable_activations, parameters, alphas, lr):
     # best_alpha is a dictionary of dictionary. Each key is the alpha variable
     # for one relu layer, and each value is a dictionary contains all relu
     # layers after that layer as keys.
+
+    print(len(alphas))
+    alphas_cpu = alphas[0].cpu()
+    alphas_cpu_np = alphas_cpu.cpu().numpy()
+    np.save('alphas_array_smac.npy', alphas_cpu)
+
     best_alphas = OrderedDict()
     for m in optimizable_activations:
         best_alphas[m.name] = {}

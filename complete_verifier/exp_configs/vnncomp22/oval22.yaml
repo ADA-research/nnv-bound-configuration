@@ -1,9 +1,11 @@
 # Configuration file for running the oval21 benchmark (all properties).
 general:
-  root_path: ../../vnncomp2022_benchmarks/benchmarks/oval21  # Please update this path to point to the VNN-COMP 2022 repo
-  csv_name: instances.csv
+  root_path: /home/koenig/alpha-beta-CROWN
+  csv_name: cifar_instances__oval22.csv
   conv_mode: matrix
 data:
+  start: 0
+  end: 30000
   dataset: CIFAR
 solver:
   batch_size: 2000

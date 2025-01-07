@@ -1,7 +1,7 @@
 # Configuration file for running the cifar2020 benchmark (all properties).
 general:
-  root_path: ../../vnncomp2021/benchmarks/cifar2020  # Please update this path to point to the VNN-COMP 2021 repo
-  csv_name: cifar2020_instances.csv
+  root_path: /home/koenig/alpha-beta-CROWN
+  csv_name: cifar_instances__cifar2020_2_255.csv
 data:
   dataset: CIFAR
 solver:
