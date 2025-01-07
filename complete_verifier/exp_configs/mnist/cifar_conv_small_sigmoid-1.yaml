@@ -1,0 +1,24 @@
+general:
+  complete_verifier: skip
+model:
+  onnx_path: ../../../models/mnist/convMedGSIGMOID__PGDK_w_0.3.onnx
+data:
+  dataset: MNIST_ERAN_UN
+  std: [1.0]
+  mean: [0.0]
+specification:
+  # epsilon: 0.12
+  # epsilon: 0.06
+  epsilon: 0.3
+attack:
+  pgd_order: skip
+  # pgd_restarts: 100
+solver:
+  batch_size: 2048
+  beta-crown:
+    iteration: 20
+  alpha-crown:
+    iteration: 5
+    full_conv_alpha: false
+bab:
+  timeout: 120
